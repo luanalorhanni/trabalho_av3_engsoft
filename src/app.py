@@ -36,7 +36,6 @@ DatabaseControler.create_table_itens_pedidos(cursor)
 #item2 = Item('mussarela', 30,'pizza','muito queijo')
 #item3 = Item('frango', 35,'pizza','frango desfiado, queijo, molho de tomate')
 #lista_itens_menu = [item1, item2, item3]
-
 #ItemControler.insert_into_item(database.name, item1)
 #ItemControler.insert_into_item(database.name, item2)
 #ItemControler.insert_into_item(database.name, item3)

@@ -33,17 +33,17 @@ class Janela2:
             endereco =''
             i=1
             for elem in row:
+                # ALTERAÇÃO (CORRETIVA): O tratamento de tupla foi removido.
+                # 'elem.endereco' agora é uma string, simplificando o código.
                 endereco_raw = elem.endereco
-                if isinstance(endereco_raw, (tuple, list)):
-                    endereco_raw = endereco_raw[0]
                 faturamento+=elem.valor_total
                 endereco = endereco_raw or 'Nao informado'
-                exibir_tela+= f'Nº: {i}| Estado: {elem.status}| Delivery: {elem.delivery}| Endereco: {endereco}| Valor: R$ {elem.valor_total} \n'
+                exibir_tela+= f'Nº: {i}| Estado: {elem.status}| Delivery: {elem.delivery}| Endereco: {endereco}| Data: {elem.date} | Valor: R$ {elem.valor_total} \n'
                 i+=1
             print(f'\nPedidos \n\n{exibir_tela}')
             print(f'Faturamento R$ {faturamento}')
         
-        elif q=='3':
+        elif q==3: # No original, estava '3' como string, corrigido para int para consistência.
             indice = int(input('Indice do pedido: '))
             resume = ItemControler.search_into_itens_pedidos_id(database_name, indice)
             quantidade_itens = len(resume)
@@ -57,7 +57,7 @@ class Janela2:
                 print('Informações do Pedido\n')
                 print(f'Status: {informacoes_pedido[1]}\nDelivery: {informacoes_pedido[2]}\nEndereco: {informacoes_pedido[3]}\nData: {informacoes_pedido[4]}\nR$ {informacoes_pedido[5]}')
                 novo_status = int(input('preparo - 1 | pronto - 2 | entregue - 3: '))
-                if novo_status/novo_status != 1:
+                if novo_status not in [1, 2, 3]:
                     print('Entrada inválida, retornando')
                 else:
                     result = PedidoControler.update_pedido_status_id(database_name, indice, novo_status)
@@ -69,5 +69,3 @@ class Janela2:
                 print('Indice inválido')    
         else:
             print('Entrada inválida, retornando')
-            
-       

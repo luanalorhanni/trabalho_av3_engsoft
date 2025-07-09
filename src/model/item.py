@@ -37,11 +37,9 @@ class Item:
         try:
             with Database.conect_database(database_name) as conn:
                 cursor = conn.cursor()
-                cursor.execute('''
-                SELECT * FROM Itens;
-                ''')
+                cursor.execute('SELECT nome, preco, tipo, descricao FROM Itens;') #adptação da consulta
                 rows = cursor.fetchall()
-                return(rows)
+                return [Item(nome=row[0], preco=row[1], tipo=row[2], descricao=row[3]) for row in rows] #atualização de retorno de tupla
 
         except OSError as e:
             #criar código de erro
@@ -167,7 +165,8 @@ class Item:
         except OSError as e:
             print(e)
             return 'I6'
-
+        
+        
 '''
 Códigos de Erro
 

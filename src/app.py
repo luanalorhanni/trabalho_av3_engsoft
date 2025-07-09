@@ -19,7 +19,7 @@ from controler.relatorioController import RelatorioControler
 #views
 from view.janela1 import Janela1
 from view.janela2 import Janela2
-# from view.janela3 import Janela3 # ESTA LINHA DEVE SER REMOVIDA OU COMENTADA
+from view.janela3 import Janela3 #linha adicionada para controle de adição de itens
 
 #report
 from report.relatorio1 import PDF
@@ -65,7 +65,7 @@ while a == 'y':
         else:
             print("Erro ao gerar o relatório.")
     if opcao == '4':
-        print('Nova view')
+        Janela3.mostrar_janela3(database.name) #condição para chamar function
     if opcao == '5':
         a = 'n'
         break

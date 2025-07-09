@@ -106,6 +106,38 @@ class Database:
             print(e)
             print('Erro ao criar a tabela')
             return 'D3'
+        
+    #adicionando coluna de data na tabela pedidos e colocando a data de hoje nos pedidos ja existentes
+    @staticmethod
+    def adicionar_coluna_data_e_atualizar(cursor: object) -> bool:
+        """
+        Adiciona a coluna 'Data' à tabela Pedidos (se ainda não existir) e atualiza os registros existentes com a data atual.
+
+        :param cursor: Cursor ativo do banco de dados.
+        :return: True em caso de sucesso ou 'D4' em caso de erro.
+        """
+        try:
+            # Tenta adicionar a nova coluna
+            cursor.execute('''
+                ALTER TABLE Pedidos ADD COLUMN Data DATE;
+            ''')
+        except Exception as e:
+            # Se o erro for "duplicate column name", apenas ignora e segue
+            if "duplicate column name" in str(e):
+                pass
+            else:
+                print("Erro ao adicionar coluna Data:", e)
+                return 'D4'
+
+        try:
+            # Atualiza todos os registros com a data atual
+            import datetime
+            data_hoje = datetime.date.today().isoformat()
+            cursor.execute("UPDATE Pedidos SET Data = ?", (data_hoje,))
+            return True
+        except Exception as e:
+            print("Erro ao atualizar os registros com a data atual:", e)
+            return 'D4'
     
     #criando a tabela dos itens_pedidos, caso não exista
     @staticmethod

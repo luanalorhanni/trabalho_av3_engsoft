@@ -3,6 +3,7 @@ import sys
 import time
 from pathlib import Path
 import pandas as pd
+import plotly.express as px #importação de ploty
 from datetime import date
 
 ##Configuração de paths
@@ -48,23 +49,25 @@ st.sidebar.title("🍕 Pizza Mais")
 st.sidebar.markdown("*Criando Sonhos*")
 st.sidebar.markdown("---")
 
-opcao = st.sidebar.selectbox(
+
+#adaptações: de selectbox para radio
+opcao = st.sidebar.radio(
     "Escolha uma opção:",
     ["🏠 Início", "📝 Cadastrar Pedido", "🔍 Pesquisar Pedidos", "📊 Relatório", "🍽️ Inserir Itens Menu"]
 )
 
+
 ##Página principal
 if opcao == "🏠 Início":
     st.title("🍕 Pizza Mais - Sistema de Gestão")
-    st.markdown("####*Criando Sonhos*")
-    st.markdown("**Estabelecimento:** Pizza Ciclano")
-    st.markdown("*Seus sonhos tem formato e borda*")
+    st.markdown("Seus sonhos tem formato e borda 😋")
+    st.markdown("Estabelecimento: UFMA")
     st.markdown("---")
     
-    ##Dashboard com métricas
+    #Dashboard com métricas
     col1, col2, col3 = st.columns(3)
     
-    with col1:
+    with col1: #coluna 1
         try:
             pedidos = PedidoControler.search_in_pedidos_all(database.name)
             total_pedidos = len(pedidos) if pedidos else 0
@@ -72,14 +75,14 @@ if opcao == "🏠 Início":
         except:
             st.metric("Total de Pedidos", 0)
     
-    with col2:
+    with col2: #coluna 2
         try:
             faturamento = sum(pedido.valor_total for pedido in pedidos) if pedidos else 0
             st.metric("Faturamento Total", f"R$ {faturamento:.2f}")
         except:
             st.metric("Faturamento Total", "R$ 0,00")
     
-    with col3:
+    with col3: #coluna 3 
         try:
             itens_menu = ItemControler.mostrar_itens_menu(database.name)
             total_itens = len(itens_menu) if itens_menu else 0
@@ -87,6 +90,51 @@ if opcao == "🏠 Início":
         except:
             st.metric("Itens no Menu", 0)
 
+    st.markdown("## 📊 Análises Visuais")
+    
+    #Dashboard com métricas
+    col1, col2, col3 = st.columns(3)
+    
+     # Recuperar os pedidos e montar um DataFrame
+    pedidos = PedidoControler.search_in_pedidos_all(database.name)
+            
+    if pedidos:
+        df = pd.DataFrame([vars(p) for p in pedidos])
+    
+        with col1: #coluna 1
+            try:         
+            # Gráfico de Pizza por Status
+                fig_status = px.pie(df, names='status', title='Distribuição por Status de Pedido')
+                st.plotly_chart(fig_status, use_container_width=True)
+            except Exception as e:
+                st.error(f"Erro ao gerar gráficos: {e}")
+                    
+        with col2: #coluna 2
+            try:        
+                # Gráfico de Pizza por Delivery (Sim/Não)
+                fig_delivery = px.pie(df, names='delivery', title='Distribuição por Delivery')
+                st.plotly_chart(fig_delivery, use_container_width=True)
+            except Exception as e:
+                st.error(f"Erro ao gerar gráficos: {e}")
+
+        with col3: #coluna 3
+            try:
+                #correção de coluna date do dataframe
+                df['date'] = pd.to_datetime(df['date'], errors='coerce')
+                df['mês'] = df['date'].dt.to_period('M').astype(str)
+                df_mensal = df.groupby('mês').size().reset_index(name='Quantidade')
+
+                fig_mensal = px.bar(df_mensal, x='mês', y='Quantidade', title='Pedidos por Mês', text='Quantidade')
+                st.plotly_chart(fig_mensal, use_container_width=True)
+                
+            except Exception as e:
+                st.error(f"Erro ao gerar gráficos: {e}")
+
+    else:
+        st.warning("Não há dados de pedidos para exibir gráficos.")
+    
+
+#Opção de Cadastrar Pedido
 
 elif opcao == "📝 Cadastrar Pedido":
     st.title("📝 Cadastrar Novo Pedido")

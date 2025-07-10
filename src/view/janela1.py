@@ -37,7 +37,8 @@ class Janela1:
             opcao = input("Digite a opção desejada: ")
             
             if opcao == '1':
-                # O código de cadastro de pedido começa aqui, pois o usuário já escolheu essa opção
+
+# O código de cadastro de pedido começa aqui, pois o usuário já escolheu essa opção
                 print('\n---------- Itens Disponíveis ----------\n')
                 menu_itens = ItemControler.mostrar_itens_menu(database_name)
                 print(f'{menu_itens} \n')

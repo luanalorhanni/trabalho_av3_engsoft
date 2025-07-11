@@ -11,7 +11,7 @@ sys.path.append(str(root))
 
 class Item:
 
-    def __init__(self, nome: str, preco: float, tipo: str, descricao: str) -> None:
+    def __init__(self, id:int,nome: str, preco: float, tipo: str, descricao: str) -> None:
         """
         Construtor da classe Item.
 
@@ -20,6 +20,7 @@ class Item:
         :param tipo: Tipo do item (string).
         :param descricao: Descrição do item (string).
         """
+        self.id=id
         self.nome = nome
         self.preco = preco
         self.tipo = tipo
@@ -37,9 +38,9 @@ class Item:
         try:
             with Database.conect_database(database_name) as conn:
                 cursor = conn.cursor()
-                cursor.execute('SELECT nome, preco, tipo, descricao FROM Itens;') #adptação da consulta
+                cursor.execute('SELECT IdItens, nome, preco, tipo, descricao FROM Itens;') #adptação da consulta
                 rows = cursor.fetchall()
-                return [Item(nome=row[0], preco=row[1], tipo=row[2], descricao=row[3]) for row in rows] #atualização de retorno de tupla
+                return [Item( id=row[0],nome=row[1], preco=row[2], tipo=row[3], descricao=row[4]) for row in rows] #atualização de retorno de tupla
 
         except OSError as e:
             #criar código de erro

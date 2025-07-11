@@ -19,7 +19,7 @@ class Pedido:
         """
         self.status = status
         self.delivery = delivery
-        self.endereco = endereco,
+        self.endereco = endereco
         self.date = date
         self.valor_total = valor_total
     
@@ -39,7 +39,7 @@ class Pedido:
                 cursor = conn.cursor()
                 cursor.execute('''
                     INSERT INTO Pedidos (Status, Delivery, Endereco, Data, ValorTotal) VALUES (?,?,?,?,?);
-                    ''', (data.status, data.delivery, data.endereco[0], data.date, data.valor_total))# (manutenção) - bug(corretiva) -> sem endereco[0] quando endereço vazio ele quebra
+                    ''', (data.status, data.delivery, data.endereco, data.date, data.valor_total))# (manutenção) - bug(corretiva) -> sem endereco[0] quando endereço vazio ele quebra
                 conn.commit()
                 return True
         except OSError as e:

@@ -203,7 +203,7 @@ elif opcao == "📝 Cadastrar Pedido":
                 st.session_state.itens_pedido_temp = []
                 st.session_state.total_pedido_temp = 0.0
                 st.info("Lista de itens do pedido temporário limpa.")
-                st.experimental_rerun()
+                st.rerun()
 
     ##--- Exibir Itens Adicionados e Total ---
     if st.session_state.itens_pedido_temp:
@@ -219,50 +219,78 @@ elif opcao == "📝 Cadastrar Pedido":
 
         ##--- Finalizar Pedido ---
         st.subheader("Finalizar Pedido")
+        # 1. Pergunta principal: É para entrega? (Fora do form para ser interativo)
+        delivery = st.radio(
+            "O pedido é para entrega (delivery)?",
+            ["Sim", "Não"],
+            horizontal=True,
+            key="delivery_option"
+        )
+
+        # 2. Se não for entrega, faz uma segunda pergunta (também interativa)
+        if delivery == "Não":
+            # Usamos o session_state para garantir que a escolha seja lembrada
+            if 'tipo_pedido_local_option' not in st.session_state:
+                st.session_state.tipo_pedido_local_option = "Para Retirada" # Valor padrão
+
+            tipo_pedido_local = st.radio(
+                "Qual o tipo do pedido?",
+                ["Para Retirada", "Consumo no Local"],
+                horizontal=True,
+                key="tipo_pedido_local_option"
+            )
+
+        # 3. O formulário para finalizar o pedido
         with st.form("form_finalizar_pedido"):
-            col1, col2 = st.columns([1, 2])
-            with col1:
-                delivery = st.radio("Delivery?", ["Sim", "Não"])
-            with col2:
-                endereco = st.text_input("Endereço de entrega", placeholder="Rua, número, bairro...")
+            
+            # Lógica para definir qual informação de 'endereço' será salva
+            if delivery == "Sim":
+                endereco = st.text_input("Endereço de entrega:", placeholder="Rua, número, bairro...")
+            else:
+                # O valor vem da segunda pergunta que fizemos
+                endereco = st.session_state.tipo_pedido_local_option
 
             status_opcao = st.selectbox("Status do Pedido:", ["preparo", "pronto", "entregue"])
             finalizar_button = st.form_submit_button("Salvar Pedido")
 
             if finalizar_button:
-                from model.pedido import Pedido
+                # Validação para garantir que o endereço não está vazio se for delivery
+                if delivery == "Sim" and not endereco.strip():
+                    st.error("Por favor, insira o endereço de entrega.")
+                else:
+                    from model.pedido import Pedido
 
-                data_hoje = date.today().strftime('%d/%m/%Y')
-                delivery_bool = True if delivery.lower() == "sim" else False
-                total = float(st.session_state.total_pedido_temp)
+                    data_hoje = date.today().strftime('%d/%m/%Y')
+                    delivery_bool = True if delivery == "Sim" else False
+                    total = float(st.session_state.total_pedido_temp)
 
-                novo_pedido = Pedido(
-                    status=status_opcao,
-                    delivery=str(delivery_bool),
-                    endereco=endereco,
-                    data=data_hoje,
-                    valor=total
-                )
+                    novo_pedido = Pedido(
+                        status=status_opcao,
+                        delivery=str(delivery_bool),
+                        endereco=endereco,
+                        date=data_hoje,
+                        valor_total=total
+                    )
 
-                # Inserir pedido no banco
-                PedidoControler.insert_into_pedidos(database.name, novo_pedido)
+                    # Inserir pedido no banco
+                    PedidoControler.insert_into_pedidos(database.name, novo_pedido)
 
-                # Recuperar o número do pedido inserido
-                pedidos = PedidoControler.search_in_pedidos_all(database.name)
-                numero_pedido = len(pedidos)
+                    # Recuperar o número do pedido inserido
+                    pedidos = PedidoControler.search_in_pedidos_all(database.name)
+                    numero_pedido = len(pedidos)
 
-                # Inserir os itens vinculados
-                for item in st.session_state.itens_pedido_temp:
-                    for _ in range(item["quantidade"]):
-                        ItemControler.insert_into_itens_pedidos(database.name, (numero_pedido, item["id"]))
+                    # Inserir os itens vinculados
+                    for item in st.session_state.itens_pedido_temp:
+                        for _ in range(item["quantidade"]):
+                            ItemControler.insert_into_itens_pedidos(database.name, (numero_pedido, item["id"]))
 
-                st.success(f"Pedido #{numero_pedido} cadastrado com sucesso!")
-                st.balloons()
+                    st.success(f"Pedido #{numero_pedido} cadastrado com sucesso!")
+                    st.balloons()
 
-                # Limpar estados temporários
-                st.session_state.itens_pedido_temp = []
-                st.session_state.total_pedido_temp = 0.0
-                st.experimental_rerun()
+                    # Limpar estados temporários
+                    st.session_state.itens_pedido_temp = []
+                    st.session_state.total_pedido_temp = 0.0
+                    st.rerun()
     else:
         st.info("Nenhum item adicionado ao pedido ainda.")
 

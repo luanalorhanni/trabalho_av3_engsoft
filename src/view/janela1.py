@@ -53,9 +53,21 @@ class Janela1:
                 
                 # Loop para adicionar itens ao pedido
                 while True:
-                    item = int(input('Numero do item: '))
-                    quantidade = int(input('Quantidade: '))
-                    
+                    entrada_item = input('Numero do item: ').strip()
+                    if not entrada_item.isdigit():
+                        print('Pedido nao pode ser vazio. Escolha um item valido.')
+                        continue
+                    item = int(entrada_item)
+                    while True:
+                        entrada_quantidade = input('Quantidade: ').strip()
+                        if not entrada_quantidade.isdigit():
+                            print('Quantidade nao pode ser nula. Escolha uma quantidade valida')
+                            continue
+                        quantidade = int(entrada_quantidade)
+                        if quantidade<=0:
+                            print('Quantidade deve ser maior que zero.')
+                            continue
+                        break
                     #calculando em tempo de execução o valor do pedido
                     valor_unitario = ItemControler.valor_item(database_name, item)
                     subtotal_item = valor_unitario[0][0] * quantidade

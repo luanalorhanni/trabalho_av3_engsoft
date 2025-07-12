@@ -91,7 +91,7 @@ class PedidoControler:
         
         
 #---------------MANUTENÇÕES---------------#
-#pefectiva - atualizar estado do pedido - fazendo
+#pefectiva - atualizar estado do pedido - feita
 #perfectiva - saber quanto está sendo o faturamento da loja em um período definido pelo usuário
     
 #adaptiva - mostrar todos os pedidos - feita

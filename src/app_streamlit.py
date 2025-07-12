@@ -134,7 +134,7 @@ if opcao == "🏠 Início":
         st.warning("Não há dados de pedidos para exibir gráficos.")
     
 
-#Opção de Cadastrar Pedido
+# Opção de Cadastrar Pedido
 
 elif opcao == "📝 Cadastrar Pedido":
     st.title("📝 Cadastrar Novo Pedido")
@@ -148,151 +148,211 @@ elif opcao == "📝 Cadastrar Pedido":
         st.session_state.itens_pedido_temp = []
     if 'total_pedido_temp' not in st.session_state:
         st.session_state.total_pedido_temp = 0.0
+    if 'pedido_finalizado' not in st.session_state:
+        st.session_state.pedido_finalizado = False
+    if 'resumo_pedido' not in st.session_state:
+        st.session_state.resumo_pedido = {}
 
-    ##--- Seção para Adicionar Itens ao Pedido ---
-    st.subheader("Adicionar Itens ao Pedido")
-    
-    itens_disponiveis = ItemControler.mostrar_itens_menu(database.name) #correção pra chamar a função com todos os itens
-
-    if not itens_disponiveis:
-        st.warning("Não há itens cadastrados no menu. Por favor, cadastre itens primeiro na opção 'Inserir Itens Menu'.")
-    else:
-        opcoes_itens_dict = {f"{item.nome} (R$ {item.preco:.2f})": item for item in itens_disponiveis} #executar select
-        opcoes_nomes = list(opcoes_itens_dict.keys())
-
-        with st.form("form_adicionar_item_ao_pedido", clear_on_submit=True):
-            col_item, col_qtd = st.columns([3, 1])
-            with col_item:
-                item_selecionado_nome_display = st.selectbox(
-                    "Selecione o item:",
-                    opcoes_nomes,
-                    key="select_item_form"
-                )
-            with col_qtd:
-                quantidade = st.number_input(
-                    "Quantidade:",
-                    min_value=1,
-                    value=1,
-                    step=1,
-                    key="quantidade_item_form"
-                )
+    # Se um pedido foi finalizado, mostra o resumo e opções
+    if st.session_state.pedido_finalizado:
+        st.success("✅ **Pedido Cadastrado com Sucesso!**")
+        
+        # Caixa com resumo do pedido
+        with st.container():
+            st.markdown(f"""
+            📋 **Resumo do Pedido:**
             
-            col_btn_add, col_btn_clear = st.columns(2)
-            with col_btn_add:
-                adicionar_item_button = st.form_submit_button("Adicionar ao Pedido")
-            with col_btn_clear:
-                limpar_itens_button_form = st.form_submit_button("Limpar Itens (Atual)")
-
-            if adicionar_item_button:
-                if item_selecionado_nome_display:
-                    item_obj = opcoes_itens_dict[item_selecionado_nome_display]
-                    item_para_adicionar = {
-                        "id": item_obj.id,
-                        "nome": item_obj.nome,
-                        "preco_unitario": item_obj.preco,
-                        "quantidade": quantidade,
-                        "subtotal": item_obj.preco * quantidade
-                    }
-                    st.session_state.itens_pedido_temp.append(item_para_adicionar)
-                    st.session_state.total_pedido_temp += item_para_adicionar["subtotal"]
-                    st.success(f"Adicionado {quantidade}x '{item_obj.nome}' (R$ {item_para_adicionar['subtotal']:.2f}) ao pedido.")
-                else:
-                    st.error("Por favor, selecione um item para adicionar.")
-            
-            if limpar_itens_button_form:
+            - **Número do Pedido:** #{st.session_state.resumo_pedido['numero']}
+            - **Status:** {st.session_state.resumo_pedido['status'].title()}
+            - **Data:** {st.session_state.resumo_pedido['data']}
+            - **Delivery:** {st.session_state.resumo_pedido['delivery']}
+            - **Endereço:** {st.session_state.resumo_pedido['endereco']}
+            - **Valor Total:** R$ {st.session_state.resumo_pedido['valor']:.2f}
+            - **Itens:** {st.session_state.resumo_pedido['qtd_itens']} tipo(s) de item(ns)
+            """)
+        
+        st.info(f"O pedido #{st.session_state.resumo_pedido['numero']}, com status '{st.session_state.resumo_pedido['status']}', da data {st.session_state.resumo_pedido['data']}, foi adicionado!")
+        
+        # Botões para próxima ação
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("📝 Cadastrar Novo Pedido", use_container_width=True):
+                # Limpar todos os estados e começar novo pedido
                 st.session_state.itens_pedido_temp = []
                 st.session_state.total_pedido_temp = 0.0
-                st.info("Lista de itens do pedido temporário limpa.")
+                st.session_state.pedido_finalizado = False
+                st.session_state.resumo_pedido = {}
                 st.rerun()
+        
+        with col2:
+            if st.button("🏠 Voltar ao Menu Principal", use_container_width=True):
+                # Limpar estados e voltar ao menu
+                st.session_state.itens_pedido_temp = []
+                st.session_state.total_pedido_temp = 0.0
+                st.session_state.pedido_finalizado = False
+                st.session_state.resumo_pedido = {}
+                st.session_state.opcao_selecionada = None
+                st.rerun()
+        
+    else:
+        # Código para cadastrar novo pedido (só executa se não estiver no resumo)
+        
+        ##--- Seção para Adicionar Itens ao Pedido ---
+        st.subheader("Adicionar Itens ao Pedido")
+    
+        itens_disponiveis = ItemControler.mostrar_itens_menu(database.name)
 
-    ##--- Exibir Itens Adicionados e Total ---
-    if st.session_state.itens_pedido_temp:
-        st.subheader("Itens no Pedido Atual")
-        df_itens_pedido = pd.DataFrame(st.session_state.itens_pedido_temp)
-        df_exibir = df_itens_pedido[['nome', 'quantidade', 'preco_unitario', 'subtotal']].copy()
-        df_exibir.columns = ['Sabor', 'Qtd', 'Preço Unitário (R$)', 'Subtotal (R$)']
-        df_exibir['Preço Unitário (R$)'] = df_exibir['Preço Unitário (R$)'].apply(lambda x: f"R$ {x:.2f}")
-        df_exibir['Subtotal (R$)'] = df_exibir['Subtotal (R$)'].apply(lambda x: f"R$ {x:.2f}")
-        st.dataframe(df_exibir, use_container_width=True, hide_index=True)
+        if not itens_disponiveis:
+            st.warning("Não há itens cadastrados no menu. Por favor, cadastre itens primeiro na opção 'Inserir Itens Menu'.")
+        else:
+            opcoes_itens_dict = {f"{item.nome} (R$ {item.preco:.2f})": item for item in itens_disponiveis}
+            opcoes_nomes = list(opcoes_itens_dict.keys())
 
-        st.markdown(f"**Valor Total do Pedido: R$ {st.session_state.total_pedido_temp:.2f}**")
-
-        ##--- Finalizar Pedido ---
-        st.subheader("Finalizar Pedido")
-        # 1. Pergunta principal: É para entrega? (Fora do form para ser interativo)
-        delivery = st.radio(
-            "O pedido é para entrega (delivery)?",
-            ["Sim", "Não"],
-            horizontal=True,
-            key="delivery_option"
-        )
-
-        # 2. Se não for entrega, faz uma segunda pergunta (também interativa)
-        if delivery == "Não":
-            # Usamos o session_state para garantir que a escolha seja lembrada
-            if 'tipo_pedido_local_option' not in st.session_state:
-                st.session_state.tipo_pedido_local_option = "Para Retirada" # Valor padrão
-
-            tipo_pedido_local = st.radio(
-                "Qual o tipo do pedido?",
-                ["Para Retirada", "Consumo no Local"],
-                horizontal=True,
-                key="tipo_pedido_local_option"
-            )
-
-        # 3. O formulário para finalizar o pedido
-        with st.form("form_finalizar_pedido"):
-            
-            # Lógica para definir qual informação de 'endereço' será salva
-            if delivery == "Sim":
-                endereco = st.text_input("Endereço de entrega:", placeholder="Rua, número, bairro...")
-            else:
-                # O valor vem da segunda pergunta que fizemos
-                endereco = st.session_state.tipo_pedido_local_option
-
-            status_opcao = st.selectbox("Status do Pedido:", ["preparo", "pronto", "entregue"])
-            finalizar_button = st.form_submit_button("Salvar Pedido")
-
-            if finalizar_button:
-                # Validação para garantir que o endereço não está vazio se for delivery
-                if delivery == "Sim" and not endereco.strip():
-                    st.error("Por favor, insira o endereço de entrega.")
-                else:
-                    from model.pedido import Pedido
-
-                    data_hoje = date.today().strftime('%d/%m/%Y')
-                    delivery_bool = True if delivery == "Sim" else False
-                    total = float(st.session_state.total_pedido_temp)
-
-                    novo_pedido = Pedido(
-                        status=status_opcao,
-                        delivery=str(delivery_bool),
-                        endereco=endereco,
-                        date=data_hoje,
-                        valor_total=total
+            with st.form("form_adicionar_item_ao_pedido", clear_on_submit=True):
+                col_item, col_qtd = st.columns([3, 1])
+                with col_item:
+                    item_selecionado_nome_display = st.selectbox(
+                        "Selecione o item:",
+                        opcoes_nomes,
+                        key="select_item_form"
                     )
+                with col_qtd:
+                    quantidade = st.number_input(
+                        "Quantidade:",
+                        min_value=1,
+                        value=1,
+                        step=1,
+                        key="quantidade_item_form"
+                    )
+                
+                col_btn_add, col_btn_clear = st.columns(2)
+                with col_btn_add:
+                    adicionar_item_button = st.form_submit_button("Adicionar ao Pedido")
+                with col_btn_clear:
+                    limpar_itens_button_form = st.form_submit_button("Limpar Itens (Atual)")
 
-                    # Inserir pedido no banco
-                    PedidoControler.insert_into_pedidos(database.name, novo_pedido)
-
-                    # Recuperar o número do pedido inserido
-                    pedidos = PedidoControler.search_in_pedidos_all(database.name)
-                    numero_pedido = len(pedidos)
-
-                    # Inserir os itens vinculados
-                    for item in st.session_state.itens_pedido_temp:
-                        for _ in range(item["quantidade"]):
-                            ItemControler.insert_into_itens_pedidos(database.name, (numero_pedido, item["id"]))
-
-                    st.success(f"Pedido #{numero_pedido} cadastrado com sucesso!")
-                    st.balloons()
-
-                    # Limpar estados temporários
+                if adicionar_item_button:
+                    if item_selecionado_nome_display:
+                        item_obj = opcoes_itens_dict[item_selecionado_nome_display]
+                        item_para_adicionar = {
+                            "id": item_obj.id,
+                            "nome": item_obj.nome,
+                            "preco_unitario": item_obj.preco,
+                            "quantidade": quantidade,
+                            "subtotal": item_obj.preco * quantidade
+                        }
+                        st.session_state.itens_pedido_temp.append(item_para_adicionar)
+                        st.session_state.total_pedido_temp += item_para_adicionar["subtotal"]
+                        st.success(f"Adicionado {quantidade}x '{item_obj.nome}' (R$ {item_para_adicionar['subtotal']:.2f}) ao pedido.")
+                    else:
+                        st.error("Por favor, selecione um item para adicionar.")
+                
+                if limpar_itens_button_form:
                     st.session_state.itens_pedido_temp = []
                     st.session_state.total_pedido_temp = 0.0
+                    st.info("Lista de itens do pedido temporário limpa.")
                     st.rerun()
-    else:
-        st.info("Nenhum item adicionado ao pedido ainda.")
+
+        ##--- Exibir Itens Adicionados e Total ---
+        if st.session_state.itens_pedido_temp:
+            st.subheader("Itens no Pedido Atual")
+            df_itens_pedido = pd.DataFrame(st.session_state.itens_pedido_temp)
+            df_exibir = df_itens_pedido[['nome', 'quantidade', 'preco_unitario', 'subtotal']].copy()
+            df_exibir.columns = ['Sabor', 'Qtd', 'Preço Unitário (R$)', 'Subtotal (R$)']
+            df_exibir['Preço Unitário (R$)'] = df_exibir['Preço Unitário (R$)'].apply(lambda x: f"R$ {x:.2f}")
+            df_exibir['Subtotal (R$)'] = df_exibir['Subtotal (R$)'].apply(lambda x: f"R$ {x:.2f}")
+            st.dataframe(df_exibir, use_container_width=True, hide_index=True)
+
+            st.markdown(f"**Valor Total do Pedido: R$ {st.session_state.total_pedido_temp:.2f}**")
+
+            ##--- Finalizar Pedido ---
+            st.subheader("Finalizar Pedido")
+            # 1. Pergunta principal: É para entrega? (Fora do form para ser interativo)
+            delivery = st.radio(
+                "O pedido é para entrega (delivery)?",
+                ["Sim", "Não"],
+                horizontal=True,
+                key="delivery_option"
+            )
+
+            # 2. Se não for entrega, faz uma segunda pergunta (também interativa)
+            if delivery == "Não":
+                # Usamos o session_state para garantir que a escolha seja lembrada
+                if 'tipo_pedido_local_option' not in st.session_state:
+                    st.session_state.tipo_pedido_local_option = "Para Retirada" # Valor padrão
+
+                tipo_pedido_local = st.radio(
+                    "Qual o tipo do pedido?",
+                    ["Para Retirada", "Consumo no Local"],
+                    horizontal=True,
+                    key="tipo_pedido_local_option"
+                )
+
+            # 3. O formulário para finalizar o pedido
+            with st.form("form_finalizar_pedido"):
+                
+                # Lógica para definir qual informação de 'endereço' será salva
+                if delivery == "Sim":
+                    endereco = st.text_input("Endereço de entrega:", placeholder="Rua, número, bairro...")
+                else:
+                    # O valor vem da segunda pergunta que fizemos
+                    endereco = st.session_state.tipo_pedido_local_option
+
+                status_opcao = st.selectbox("Status do Pedido:", ["preparo", "pronto", "entregue"])
+                finalizar_button = st.form_submit_button("Salvar Pedido")
+
+                if finalizar_button:
+                    # Validação para garantir que o endereço não está vazio se for delivery
+                    if delivery == "Sim" and not endereco.strip():
+                        st.error("Por favor, insira o endereço de entrega.")
+                    else:
+                        from model.pedido import Pedido
+
+                        data_hoje = date.today().strftime('%d/%m/%Y')
+                        delivery_bool = True if delivery == "Sim" else False
+                        total = float(st.session_state.total_pedido_temp)
+
+                        novo_pedido = Pedido(
+                            status=status_opcao,
+                            delivery=str(delivery_bool),
+                            endereco=endereco,
+                            date=data_hoje,
+                            valor_total=total
+                        )
+
+                        # Inserir pedido no banco
+                        PedidoControler.insert_into_pedidos(database.name, novo_pedido)
+
+                        # Recuperar o número do pedido inserido
+                        pedidos = PedidoControler.search_in_pedidos_all(database.name)
+                        numero_pedido = len(pedidos)
+
+                        # Inserir os itens vinculados
+                        for item in st.session_state.itens_pedido_temp:
+                            for _ in range(item["quantidade"]):
+                                ItemControler.insert_into_itens_pedidos(database.name, (numero_pedido, item["id"]))
+
+                        # Configurar o resumo do pedido ANTES de limpar os estados temporários
+                        st.session_state.resumo_pedido = {
+                            'numero': numero_pedido,
+                            'status': status_opcao,
+                            'data': data_hoje,
+                            'delivery': 'Sim' if delivery_bool else 'Não',
+                            'endereco': endereco,
+                            'valor': total,
+                            'qtd_itens': len(st.session_state.itens_pedido_temp)
+                        }
+
+                        # Marcar que o pedido foi finalizado
+                        st.session_state.pedido_finalizado = True
+
+                        # Limpar estados temporários
+                        st.session_state.itens_pedido_temp = []
+                        st.session_state.total_pedido_temp = 0.0
+                        
+                        st.rerun()
+        else:
+            st.info("Nenhum item adicionado ao pedido ainda.")
 
 ##Página de pesquisa de pedidos
 elif opcao == "🔍 Pesquisar Pedidos":

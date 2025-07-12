@@ -60,7 +60,7 @@ class Janela2:
                 if novo_status not in [1, 2, 3]:
                     print('Entrada inválida, retornando')
                 else:
-                    result = PedidoControler.update_pedido_status_id(database_name, indice, novo_status)
+                    result = PedidoControler.update_pedido_status(database_name, indice, novo_status)
                     if result:
                         print(f'Status do Pedido {indice} atualizado com sucesso')
                     else:

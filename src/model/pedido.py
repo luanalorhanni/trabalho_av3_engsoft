@@ -112,6 +112,7 @@ class Pedido:
                     cursor.execute(f'''
                         UPDATE Pedidos SET status='{status}' WHERE IdPedido={indice};
                     ''')
+                    conn.commit()
                     return True
                 else:
                     return False

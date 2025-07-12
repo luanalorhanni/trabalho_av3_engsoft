@@ -61,7 +61,7 @@ class PedidoControler:
        return result
     
     @staticmethod
-    def update_pedido_status_id(database_name: str, indice:int, status: str) -> bool:
+    def update_pedido_status(database_name: str, indice:int, status: str) -> bool:
         """
         Atualiza status de um determinado pedido informado pelo indice
         :param database_name: Nome do banco de dados (string).

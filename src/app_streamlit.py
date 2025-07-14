@@ -469,7 +469,7 @@ elif opcao == "🔍 Pesquisar Pedidos":
                 status_num = status_map[novo_status]
                 
                 try:
-                    resultado = PedidoControler.update_pedido_status_id(database.name, st.session_state.indice_pedido, status_num)
+                    resultado = PedidoControler.update_pedido_status(database.name, st.session_state.indice_pedido, status_num)
                     if resultado:
                         st.success(f"Status do Pedido {st.session_state.indice_pedido} atualizado para '{novo_status}' com sucesso!")
                         st.session_state.pedido_carregado = False
